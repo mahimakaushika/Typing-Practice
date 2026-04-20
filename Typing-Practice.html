@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mahee Swift - Typing Practice</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -276,6 +276,25 @@
             0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
+
+        /* Focus overlay */
+        .focus-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 20;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .focus-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
     </style>
 <base target="_blank">
 </head>
@@ -392,34 +411,36 @@
 
             <!-- Typing Area -->
             <div class="w-full max-w-4xl relative">
-                <!-- Focus indicator -->
-                <div id="focusIndicator" class="absolute -top-12 left-1/2 transform -translate-x-1/2 text-sm text-indigo-400 opacity-0 transition-opacity duration-300 flex items-center gap-2">
-                    <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
-                    </svg>
-                    Click here or press any key to start
-                </div>
 
-                <div class="glass rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden" onclick="focusTyping()">
+                <div id="typingBox" class="glass rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden" tabindex="0">
                     <!-- Decorative corner accents -->
-                    <div class="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-indigo-500/30 rounded-tl-2xl"></div>
-                    <div class="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-indigo-500/30 rounded-tr-2xl"></div>
-                    <div class="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-indigo-500/30 rounded-bl-2xl"></div>
-                    <div class="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-indigo-500/30 rounded-br-2xl"></div>
+                    <div class="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-indigo-500/30 rounded-tl-2xl pointer-events-none"></div>
+                    <div class="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-indigo-500/30 rounded-tr-2xl pointer-events-none"></div>
+                    <div class="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-indigo-500/30 rounded-bl-2xl pointer-events-none"></div>
+                    <div class="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-indigo-500/30 rounded-br-2xl pointer-events-none"></div>
 
                     <!-- Text Display -->
-                    <div id="textDisplay" class="typing-text mono-font text-lg md:text-2xl leading-relaxed md:leading-loose text-slate-500 break-words select-none min-h-[120px] md:min-h-[160px]">
+                    <div id="textDisplay" class="typing-text mono-font text-lg md:text-2xl leading-relaxed md:leading-loose text-slate-500 break-words select-none min-h-[120px] md:min-h-[160px] outline-none" tabindex="-1">
                         <!-- Text will be injected here -->
                     </div>
 
-                    <!-- Hidden Input -->
-                    <textarea id="hiddenInput" class="absolute opacity-0 top-0 left-0 h-full w-full cursor-default" spellcheck="false" autocomplete="off"></textarea>
+                    <!-- Focus Overlay - shown when not focused -->
+                    <div id="focusOverlay" class="focus-overlay rounded-2xl md:rounded-3xl" onclick="focusTyping()">
+                        <div class="text-center">
+                            <svg class="w-12 h-12 text-indigo-400 mx-auto mb-3 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                            </svg>
+                            <p class="text-indigo-300 text-lg font-medium">Click here or press any key to start typing</p>
+                            <p class="text-slate-500 text-sm mt-2">The typing area must be focused to capture keystrokes</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Keyboard Hint -->
                 <div id="keyboardHint" class="keyboard-hint mt-4 text-center text-slate-400 text-sm flex items-center justify-center gap-2">
                     <span class="px-2 py-1 rounded bg-white/10 text-xs mono-font">Esc</span> to reset
                     <span class="px-2 py-1 rounded bg-white/10 text-xs mono-font ml-2">Tab</span> to restart
+                    <span class="px-2 py-1 rounded bg-white/10 text-xs mono-font ml-2">Backspace</span> to correct
                 </div>
             </div>
 
@@ -443,7 +464,7 @@
 
         <!-- Footer -->
         <footer class="w-full p-4 text-center text-slate-500 text-sm">
-            <p>TypeFlow - Practice makes perfect</p>
+            <p>MaheeType - Practice makes perfect</p>
         </footer>
     </div>
 
@@ -541,6 +562,7 @@
         let timerInterval = null;
         let errors = 0;
         let isTyping = false;
+        let isCompleted = false;
         let difficulty = 'medium';
         let soundEnabled = true;
 
@@ -636,9 +658,16 @@
 
         // Focus typing area
         function focusTyping() {
-            document.getElementById('hiddenInput').focus();
-            document.getElementById('focusIndicator').style.opacity = '0';
+            const box = document.getElementById('typingBox');
+            box.focus();
+            document.getElementById('focusOverlay').classList.add('hidden');
             document.getElementById('keyboardHint').classList.add('show');
+        }
+
+        function blurTyping() {
+            if (!isCompleted) {
+                document.getElementById('focusOverlay').classList.remove('hidden');
+            }
         }
 
         // Start timer
@@ -672,17 +701,14 @@
             const total = currentIndex;
             const acc = Math.round(((total - errors) / total) * 100);
 
-            // Update the centered display value
             const displayEl = document.getElementById('accuracyDisplay');
             displayEl.textContent = acc;
 
-            // Update ring
             const ring = document.getElementById('accuracyRing');
-            const circumference = 2 * Math.PI * 42; // r=42
+            const circumference = 2 * Math.PI * 42;
             const offset = circumference - (acc / 100) * circumference;
             ring.style.strokeDashoffset = offset;
 
-            // Color based on accuracy
             if (acc >= 95) {
                 ring.style.stroke = '#34d399';
                 displayEl.className = 'accuracy-value text-emerald-400';
@@ -695,20 +721,28 @@
             }
         }
 
-        // Handle input
-        function handleInput(e) {
-            e.preventDefault();
+        // Handle keydown - MAIN TYPING LOGIC
+        function handleKeyDown(e) {
+            // Ignore if completed
+            if (isCompleted) return;
 
-            if (!isTyping) {
-                isTyping = true;
-                startTimer();
-                initAudio();
+            // Handle Tab for restart
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                restartTest();
+                return;
             }
 
-            const input = e.target;
+            // Handle Escape for new text
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                resetTest();
+                return;
+            }
 
-            // Handle backspace
-            if (e.inputType === 'deleteContentBackward' || e.key === 'Backspace') {
+            // Handle Backspace
+            if (e.key === 'Backspace') {
+                e.preventDefault();
                 if (currentIndex > 0) {
                     currentIndex--;
                     const char = document.querySelector(`[data-index="${currentIndex}"]`);
@@ -721,19 +755,28 @@
                 return;
             }
 
-            let char = '';
-            if (e.data) {
-                char = e.data;
-            } else if (e.key && e.key.length === 1) {
-                char = e.key;
+            // Ignore modifier keys and special keys
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+            if (e.key.length !== 1) return; // Only single characters
+
+            // Prevent default to stop browser shortcuts
+            e.preventDefault();
+
+            // Start timer on first keystroke
+            if (!isTyping) {
+                isTyping = true;
+                startTimer();
+                initAudio();
             }
 
-            if (!char || currentIndex >= currentText.length) return;
+            // Don't allow typing past the end
+            if (currentIndex >= currentText.length) return;
 
             const expectedChar = currentText[currentIndex];
+            const typedChar = e.key;
             const charElement = document.querySelector(`[data-index="${currentIndex}"]`);
 
-            if (char === expectedChar) {
+            if (typedChar === expectedChar) {
                 charElement.classList.add('correct');
                 charElement.classList.remove('incorrect');
                 playSound('correct');
@@ -750,37 +793,15 @@
             updateAccuracy();
             updateWPM();
 
+            // Check completion
             if (currentIndex >= currentText.length) {
                 completeTest();
-            }
-
-            input.value = '';
-        }
-
-        // Handle special keys
-        function handleKeyDown(e) {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                restartTest();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                resetTest();
-            } else if (e.key === 'Backspace') {
-                e.preventDefault();
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    const char = document.querySelector(`[data-index="${currentIndex}"]`);
-                    if (char) {
-                        char.classList.remove('correct', 'incorrect');
-                    }
-                    updateCursor();
-                    updateAccuracy();
-                }
             }
         }
 
         // Complete test
         function completeTest() {
+            isCompleted = true;
             clearInterval(timerInterval);
             playSound('complete');
             createConfetti();
@@ -822,19 +843,17 @@
             startTime = null;
             errors = 0;
             isTyping = false;
+            isCompleted = false;
 
             document.getElementById('wpm').textContent = '0';
             document.getElementById('accuracyDisplay').textContent = '100';
             document.getElementById('timer').textContent = '0';
             document.getElementById('errors').textContent = '0';
 
-            // Reset ring to full
             const ring = document.getElementById('accuracyRing');
             ring.style.strokeDashoffset = '0';
             ring.style.stroke = '#34d399';
             document.getElementById('accuracyDisplay').className = 'accuracy-value text-emerald-400';
-
-            document.getElementById('hiddenInput').value = '';
 
             initDisplay();
             focusTyping();
@@ -847,6 +866,7 @@
             startTime = null;
             errors = 0;
             isTyping = false;
+            isCompleted = false;
 
             document.getElementById('wpm').textContent = '0';
             document.getElementById('accuracyDisplay').textContent = '100';
@@ -857,8 +877,6 @@
             ring.style.strokeDashoffset = '0';
             ring.style.stroke = '#34d399';
             document.getElementById('accuracyDisplay').className = 'accuracy-value text-emerald-400';
-
-            document.getElementById('hiddenInput').value = '';
 
             initDisplay();
             focusTyping();
@@ -880,13 +898,14 @@
 
         // Show help
         function showHelp() {
-            alert('TypeFlow Help:
+            alert('MaheeType Help:
 
 • Click the text area to focus
 • Type the displayed text
 • Green = correct, Red = incorrect
 • Tab: Restart same text
 • Esc: New random text
+• Backspace: Correct mistakes
 • Sound can be toggled in header');
         }
 
@@ -896,21 +915,38 @@
             currentText = getRandomText();
             initDisplay();
 
-            const hiddenInput = document.getElementById('hiddenInput');
-            hiddenInput.addEventListener('input', handleInput);
-            hiddenInput.addEventListener('keydown', handleKeyDown);
+            const typingBox = document.getElementById('typingBox');
 
-            setTimeout(focusTyping, 500);
+            // Main event listener for typing
+            typingBox.addEventListener('keydown', handleKeyDown);
 
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.glass') && !e.target.closest('button')) {
-                    focusTyping();
-                }
+            // Focus/blur handling
+            typingBox.addEventListener('focus', () => {
+                document.getElementById('focusOverlay').classList.add('hidden');
+                document.getElementById('keyboardHint').classList.add('show');
             });
+
+            typingBox.addEventListener('blur', blurTyping);
+
+            // Auto-focus on load
+            setTimeout(focusTyping, 300);
         });
 
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) setTimeout(focusTyping, 100);
+        // Keep focus when clicking elsewhere
+        document.addEventListener('click', (e) => {
+            const typingBox = document.getElementById('typingBox');
+            const modal = document.getElementById('resultModal');
+
+            // Don't steal focus if modal is open
+            if (!modal.classList.contains('hidden')) return;
+
+            // Don't steal focus if clicking buttons
+            if (e.target.closest('button')) return;
+
+            // Focus typing box if clicking on it or its overlay
+            if (e.target.closest('#typingBox') || e.target.closest('#focusOverlay')) {
+                focusTyping();
+            }
         });
     </script>
 </body>
