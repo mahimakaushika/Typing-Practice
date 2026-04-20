@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TypeFlow - Typing Practice</title>
+    <title>Mahee Swift - Typing Practice</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -131,14 +131,32 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
-        /* Progress bar */
-        .progress-ring {
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
+        /* Progress ring - FIXED */
+        .accuracy-ring-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 8px;
         }
 
-        .progress-ring-circle {
+        .accuracy-ring-container svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .accuracy-ring-container .progress-ring-circle {
             transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .accuracy-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         /* Button animations */
@@ -218,6 +236,13 @@
                 font-size: 1.1rem !important;
                 line-height: 2 !important;
             }
+            .accuracy-ring-container {
+                width: 60px;
+                height: 60px;
+            }
+            .accuracy-value {
+                font-size: 0.875rem;
+            }
         }
 
         /* Smooth scrollbar */
@@ -252,6 +277,7 @@
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
     </style>
+<base target="_blank">
 </head>
 <body class="antialiased">
     <!-- Background Particles -->
@@ -259,7 +285,7 @@
 
     <!-- Main Container -->
     <div class="relative z-10 min-h-screen flex flex-col">
-        
+
         <!-- Header -->
         <header class="w-full p-4 md:p-6">
             <div class="max-w-6xl mx-auto flex items-center justify-between">
@@ -270,10 +296,10 @@
                         </svg>
                     </div>
                     <h1 class="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
-                        TypeFlow
+                        Mahee Swift
                     </h1>
                 </div>
-                
+
                 <div class="flex items-center gap-2">
                     <button onclick="toggleSound()" id="soundBtn" class="p-2 rounded-lg glass hover:bg-white/10 transition-colors">
                         <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -291,7 +317,7 @@
 
         <!-- Main Content -->
         <main class="flex-1 flex flex-col items-center justify-center px-4 py-6 md:py-12 w-full max-w-6xl mx-auto">
-            
+
             <!-- Stats Bar -->
             <div class="w-full grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-10">
                 <!-- WPM -->
@@ -306,22 +332,25 @@
                     </div>
                 </div>
 
-                <!-- Accuracy -->
+                <!-- Accuracy - FIXED LAYOUT -->
                 <div class="stat-card glass rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden group">
                     <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div class="relative z-10 text-center">
-                        <div class="text-xs md:text-sm text-slate-400 uppercase tracking-wider font-semibold mb-1">Accuracy</div>
-                        <div class="text-3xl md:text-4xl font-bold text-white mono-font">
-                            <span id="accuracy">100</span>
-                            <span class="text-sm md:text-base text-slate-500 font-normal">%</span>
+                    <div class="relative z-10 text-center w-full">
+                        <div class="text-xs md:text-sm text-slate-400 uppercase tracking-wider font-semibold mb-2">Accuracy</div>
+
+                        <!-- Ring Container with centered value -->
+                        <div class="accuracy-ring-container">
+                            <svg viewBox="0 0 100 100" class="w-full h-full">
+                                <!-- Background circle -->
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+                                <!-- Progress circle -->
+                                <circle id="accuracyRing" class="progress-ring-circle" cx="50" cy="50" r="42" fill="none" stroke="#34d399" stroke-width="6" 
+                                    stroke-dasharray="263.89" stroke-dashoffset="0" stroke-linecap="round"/>
+                            </svg>
+                            <!-- Centered percentage value -->
+                            <div class="accuracy-value text-emerald-400" id="accuracyDisplay">100</div>
                         </div>
                     </div>
-                    <!-- Circular progress -->
-                    <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2"/>
-                        <circle id="accuracyRing" class="progress-ring-circle" cx="50" cy="50" r="45" fill="none" stroke="#34d399" stroke-width="2" 
-                            stroke-dasharray="283" stroke-dashoffset="0" stroke-linecap="round"/>
-                    </svg>
                 </div>
 
                 <!-- Time -->
@@ -514,7 +543,6 @@
         let isTyping = false;
         let difficulty = 'medium';
         let soundEnabled = true;
-        let typedHistory = [];
 
         // Audio context for sound effects
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -526,13 +554,13 @@
 
         function playSound(type) {
             if (!soundEnabled || !audioCtx) return;
-            
+
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-            
+
             if (type === 'correct') {
                 oscillator.frequency.value = 800;
                 gainNode.gain.value = 0.05;
@@ -546,7 +574,7 @@
                 gainNode.gain.value = 0.05;
                 oscillator.type = 'sine';
             }
-            
+
             oscillator.start();
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
             oscillator.stop(audioCtx.currentTime + 0.1);
@@ -585,7 +613,7 @@
         function initDisplay() {
             const display = document.getElementById('textDisplay');
             display.innerHTML = '';
-            
+
             currentText.split('').forEach((char, index) => {
                 const span = document.createElement('span');
                 span.className = 'char';
@@ -593,8 +621,7 @@
                 span.dataset.index = index;
                 display.appendChild(span);
             });
-            
-            // Add cursor after first char initially
+
             updateCursor();
         }
 
@@ -603,8 +630,6 @@
             const currentChar = document.querySelector(`[data-index="${currentIndex}"]`);
             if (currentChar) {
                 currentChar.classList.add('current');
-                
-                // Scroll into view if needed
                 currentChar.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
@@ -633,37 +658,47 @@
         // Calculate WPM
         function updateWPM() {
             if (!startTime) return;
-            const elapsed = (Date.now() - startTime) / 60000; // minutes
+            const elapsed = (Date.now() - startTime) / 60000;
             if (elapsed === 0) return;
-            
-            const wordsTyped = currentIndex / 5; // standard word length
+
+            const wordsTyped = currentIndex / 5;
             const wpm = Math.round(wordsTyped / elapsed);
             document.getElementById('wpm').textContent = Math.max(0, wpm);
         }
 
-        // Update accuracy
+        // Update accuracy - FIXED
         function updateAccuracy() {
             if (currentIndex === 0) return;
             const total = currentIndex;
             const acc = Math.round(((total - errors) / total) * 100);
-            document.getElementById('accuracy').textContent = acc;
-            
+
+            // Update the centered display value
+            const displayEl = document.getElementById('accuracyDisplay');
+            displayEl.textContent = acc;
+
             // Update ring
             const ring = document.getElementById('accuracyRing');
-            const circumference = 2 * Math.PI * 45;
+            const circumference = 2 * Math.PI * 42; // r=42
             const offset = circumference - (acc / 100) * circumference;
             ring.style.strokeDashoffset = offset;
-            
+
             // Color based on accuracy
-            if (acc >= 95) ring.style.stroke = '#34d399';
-            else if (acc >= 80) ring.style.stroke = '#fbbf24';
-            else ring.style.stroke = '#f87171';
+            if (acc >= 95) {
+                ring.style.stroke = '#34d399';
+                displayEl.className = 'accuracy-value text-emerald-400';
+            } else if (acc >= 80) {
+                ring.style.stroke = '#fbbf24';
+                displayEl.className = 'accuracy-value text-amber-400';
+            } else {
+                ring.style.stroke = '#f87171';
+                displayEl.className = 'accuracy-value text-rose-400';
+            }
         }
 
         // Handle input
         function handleInput(e) {
             e.preventDefault();
-            
+
             if (!isTyping) {
                 isTyping = true;
                 startTimer();
@@ -671,8 +706,7 @@
             }
 
             const input = e.target;
-            const value = input.value;
-            
+
             // Handle backspace
             if (e.inputType === 'deleteContentBackward' || e.key === 'Backspace') {
                 if (currentIndex > 0) {
@@ -687,7 +721,6 @@
                 return;
             }
 
-            // Get the typed character
             let char = '';
             if (e.data) {
                 char = e.data;
@@ -717,12 +750,10 @@
             updateAccuracy();
             updateWPM();
 
-            // Check completion
             if (currentIndex >= currentText.length) {
                 completeTest();
             }
 
-            // Clear input to handle next character
             input.value = '';
         }
 
@@ -753,16 +784,16 @@
             clearInterval(timerInterval);
             playSound('complete');
             createConfetti();
-            
+
             const time = Math.floor((Date.now() - startTime) / 1000);
             const wpm = document.getElementById('wpm').textContent;
-            const accuracy = document.getElementById('accuracy').textContent;
-            
+            const accuracy = document.getElementById('accuracyDisplay').textContent;
+
             document.getElementById('finalWpm').textContent = wpm;
             document.getElementById('finalAccuracy').textContent = accuracy + '%';
             document.getElementById('finalTime').textContent = time + 's';
             document.getElementById('finalErrors').textContent = errors;
-            
+
             setTimeout(() => {
                 document.getElementById('resultModal').classList.remove('hidden');
             }, 500);
@@ -791,14 +822,20 @@
             startTime = null;
             errors = 0;
             isTyping = false;
-            
+
             document.getElementById('wpm').textContent = '0';
-            document.getElementById('accuracy').textContent = '100';
+            document.getElementById('accuracyDisplay').textContent = '100';
             document.getElementById('timer').textContent = '0';
             document.getElementById('errors').textContent = '0';
-            document.getElementById('accuracyRing').style.strokeDashoffset = '0';
+
+            // Reset ring to full
+            const ring = document.getElementById('accuracyRing');
+            ring.style.strokeDashoffset = '0';
+            ring.style.stroke = '#34d399';
+            document.getElementById('accuracyDisplay').className = 'accuracy-value text-emerald-400';
+
             document.getElementById('hiddenInput').value = '';
-            
+
             initDisplay();
             focusTyping();
         }
@@ -810,14 +847,19 @@
             startTime = null;
             errors = 0;
             isTyping = false;
-            
+
             document.getElementById('wpm').textContent = '0';
-            document.getElementById('accuracy').textContent = '100';
+            document.getElementById('accuracyDisplay').textContent = '100';
             document.getElementById('timer').textContent = '0';
             document.getElementById('errors').textContent = '0';
-            document.getElementById('accuracyRing').style.strokeDashoffset = '0';
+
+            const ring = document.getElementById('accuracyRing');
+            ring.style.strokeDashoffset = '0';
+            ring.style.stroke = '#34d399';
+            document.getElementById('accuracyDisplay').className = 'accuracy-value text-emerald-400';
+
             document.getElementById('hiddenInput').value = '';
-            
+
             initDisplay();
             focusTyping();
         }
@@ -838,7 +880,14 @@
 
         // Show help
         function showHelp() {
-            alert('TypeFlow Help:\n\n• Click the text area to focus\n• Type the displayed text\n• Green = correct, Red = incorrect\n• Tab: Restart same text\n• Esc: New random text\n• Sound can be toggled in header');
+            alert('TypeFlow Help:
+
+• Click the text area to focus
+• Type the displayed text
+• Green = correct, Red = incorrect
+• Tab: Restart same text
+• Esc: New random text
+• Sound can be toggled in header');
         }
 
         // Initialize
@@ -846,15 +895,13 @@
             createParticles();
             currentText = getRandomText();
             initDisplay();
-            
+
             const hiddenInput = document.getElementById('hiddenInput');
             hiddenInput.addEventListener('input', handleInput);
             hiddenInput.addEventListener('keydown', handleKeyDown);
-            
-            // Focus on load
+
             setTimeout(focusTyping, 500);
-            
-            // Keep focus
+
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.glass') && !e.target.closest('button')) {
                     focusTyping();
@@ -862,7 +909,6 @@
             });
         });
 
-        // Prevent losing focus
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) setTimeout(focusTyping, 100);
         });
