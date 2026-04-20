@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mahee Swift - Typing Practice</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -131,32 +131,14 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
-        /* Progress ring - FIXED */
-        .accuracy-ring-container {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 8px;
-        }
-
-        .accuracy-ring-container svg {
+        /* Progress bar */
+        .progress-ring {
             transform: rotate(-90deg);
-            width: 100%;
-            height: 100%;
+            transform-origin: 50% 50%;
         }
 
-        .accuracy-ring-container .progress-ring-circle {
+        .progress-ring-circle {
             transition: stroke-dashoffset 0.5s ease;
-        }
-
-        .accuracy-value {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.25rem;
-            font-weight: 700;
-            font-family: 'JetBrains Mono', monospace;
         }
 
         /* Button animations */
@@ -236,13 +218,6 @@
                 font-size: 1.1rem !important;
                 line-height: 2 !important;
             }
-            .accuracy-ring-container {
-                width: 60px;
-                height: 60px;
-            }
-            .accuracy-value {
-                font-size: 0.875rem;
-            }
         }
 
         /* Smooth scrollbar */
@@ -276,27 +251,7 @@
             0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
-
-        /* Focus overlay */
-        .focus-overlay {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(4px);
-            z-index: 20;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-        }
-
-        .focus-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
     </style>
-<base target="_blank">
 </head>
 <body class="antialiased">
     <!-- Background Particles -->
@@ -304,7 +259,7 @@
 
     <!-- Main Container -->
     <div class="relative z-10 min-h-screen flex flex-col">
-
+        
         <!-- Header -->
         <header class="w-full p-4 md:p-6">
             <div class="max-w-6xl mx-auto flex items-center justify-between">
@@ -318,7 +273,7 @@
                         Mahee Swift
                     </h1>
                 </div>
-
+                
                 <div class="flex items-center gap-2">
                     <button onclick="toggleSound()" id="soundBtn" class="p-2 rounded-lg glass hover:bg-white/10 transition-colors">
                         <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -336,7 +291,7 @@
 
         <!-- Main Content -->
         <main class="flex-1 flex flex-col items-center justify-center px-4 py-6 md:py-12 w-full max-w-6xl mx-auto">
-
+            
             <!-- Stats Bar -->
             <div class="w-full grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-10">
                 <!-- WPM -->
@@ -351,25 +306,22 @@
                     </div>
                 </div>
 
-                <!-- Accuracy - FIXED LAYOUT -->
+                <!-- Accuracy -->
                 <div class="stat-card glass rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden group">
                     <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div class="relative z-10 text-center w-full">
-                        <div class="text-xs md:text-sm text-slate-400 uppercase tracking-wider font-semibold mb-2">Accuracy</div>
-
-                        <!-- Ring Container with centered value -->
-                        <div class="accuracy-ring-container">
-                            <svg viewBox="0 0 100 100" class="w-full h-full">
-                                <!-- Background circle -->
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
-                                <!-- Progress circle -->
-                                <circle id="accuracyRing" class="progress-ring-circle" cx="50" cy="50" r="42" fill="none" stroke="#34d399" stroke-width="6" 
-                                    stroke-dasharray="263.89" stroke-dashoffset="0" stroke-linecap="round"/>
-                            </svg>
-                            <!-- Centered percentage value -->
-                            <div class="accuracy-value text-emerald-400" id="accuracyDisplay">100</div>
+                    <div class="relative z-10 text-center">
+                        <div class="text-xs md:text-sm text-slate-400 uppercase tracking-wider font-semibold mb-1">Accuracy</div>
+                        <div class="text-3xl md:text-4xl font-bold text-white mono-font">
+                            <span id="accuracy">100</span>
+                            <span class="text-sm md:text-base text-slate-500 font-normal">%</span>
                         </div>
                     </div>
+                    <!-- Circular progress -->
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2"/>
+                        <circle id="accuracyRing" class="progress-ring-circle" cx="50" cy="50" r="45" fill="none" stroke="#34d399" stroke-width="2" 
+                            stroke-dasharray="283" stroke-dashoffset="0" stroke-linecap="round"/>
+                    </svg>
                 </div>
 
                 <!-- Time -->
@@ -411,36 +363,34 @@
 
             <!-- Typing Area -->
             <div class="w-full max-w-4xl relative">
+                <!-- Focus indicator -->
+                <div id="focusIndicator" class="absolute -top-12 left-1/2 transform -translate-x-1/2 text-sm text-indigo-400 opacity-0 transition-opacity duration-300 flex items-center gap-2">
+                    <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                    </svg>
+                    Click here or press any key to start
+                </div>
 
-                <div id="typingBox" class="glass rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden" tabindex="0">
+                <div class="glass rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden" onclick="focusTyping()">
                     <!-- Decorative corner accents -->
-                    <div class="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-indigo-500/30 rounded-tl-2xl pointer-events-none"></div>
-                    <div class="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-indigo-500/30 rounded-tr-2xl pointer-events-none"></div>
-                    <div class="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-indigo-500/30 rounded-bl-2xl pointer-events-none"></div>
-                    <div class="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-indigo-500/30 rounded-br-2xl pointer-events-none"></div>
+                    <div class="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-indigo-500/30 rounded-tl-2xl"></div>
+                    <div class="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-indigo-500/30 rounded-tr-2xl"></div>
+                    <div class="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-indigo-500/30 rounded-bl-2xl"></div>
+                    <div class="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-indigo-500/30 rounded-br-2xl"></div>
 
                     <!-- Text Display -->
-                    <div id="textDisplay" class="typing-text mono-font text-lg md:text-2xl leading-relaxed md:leading-loose text-slate-500 break-words select-none min-h-[120px] md:min-h-[160px] outline-none" tabindex="-1">
+                    <div id="textDisplay" class="typing-text mono-font text-lg md:text-2xl leading-relaxed md:leading-loose text-slate-500 break-words select-none min-h-[120px] md:min-h-[160px]">
                         <!-- Text will be injected here -->
                     </div>
 
-                    <!-- Focus Overlay - shown when not focused -->
-                    <div id="focusOverlay" class="focus-overlay rounded-2xl md:rounded-3xl" onclick="focusTyping()">
-                        <div class="text-center">
-                            <svg class="w-12 h-12 text-indigo-400 mx-auto mb-3 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
-                            </svg>
-                            <p class="text-indigo-300 text-lg font-medium">Click here or press any key to start typing</p>
-                            <p class="text-slate-500 text-sm mt-2">The typing area must be focused to capture keystrokes</p>
-                        </div>
-                    </div>
+                    <!-- Hidden Input -->
+                    <textarea id="hiddenInput" class="absolute opacity-0 top-0 left-0 h-full w-full cursor-default" spellcheck="false" autocomplete="off"></textarea>
                 </div>
 
                 <!-- Keyboard Hint -->
                 <div id="keyboardHint" class="keyboard-hint mt-4 text-center text-slate-400 text-sm flex items-center justify-center gap-2">
                     <span class="px-2 py-1 rounded bg-white/10 text-xs mono-font">Esc</span> to reset
                     <span class="px-2 py-1 rounded bg-white/10 text-xs mono-font ml-2">Tab</span> to restart
-                    <span class="px-2 py-1 rounded bg-white/10 text-xs mono-font ml-2">Backspace</span> to correct
                 </div>
             </div>
 
@@ -464,7 +414,7 @@
 
         <!-- Footer -->
         <footer class="w-full p-4 text-center text-slate-500 text-sm">
-            <p>MaheeType - Practice makes perfect</p>
+            <p>TypeFlow - Practice makes perfect</p>
         </footer>
     </div>
 
@@ -562,9 +512,9 @@
         let timerInterval = null;
         let errors = 0;
         let isTyping = false;
-        let isCompleted = false;
         let difficulty = 'medium';
         let soundEnabled = true;
+        let typedHistory = [];
 
         // Audio context for sound effects
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -576,13 +526,13 @@
 
         function playSound(type) {
             if (!soundEnabled || !audioCtx) return;
-
+            
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-
+            
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
-
+            
             if (type === 'correct') {
                 oscillator.frequency.value = 800;
                 gainNode.gain.value = 0.05;
@@ -596,7 +546,7 @@
                 gainNode.gain.value = 0.05;
                 oscillator.type = 'sine';
             }
-
+            
             oscillator.start();
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
             oscillator.stop(audioCtx.currentTime + 0.1);
@@ -635,7 +585,7 @@
         function initDisplay() {
             const display = document.getElementById('textDisplay');
             display.innerHTML = '';
-
+            
             currentText.split('').forEach((char, index) => {
                 const span = document.createElement('span');
                 span.className = 'char';
@@ -643,7 +593,8 @@
                 span.dataset.index = index;
                 display.appendChild(span);
             });
-
+            
+            // Add cursor after first char initially
             updateCursor();
         }
 
@@ -652,22 +603,17 @@
             const currentChar = document.querySelector(`[data-index="${currentIndex}"]`);
             if (currentChar) {
                 currentChar.classList.add('current');
+                
+                // Scroll into view if needed
                 currentChar.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
 
         // Focus typing area
         function focusTyping() {
-            const box = document.getElementById('typingBox');
-            box.focus();
-            document.getElementById('focusOverlay').classList.add('hidden');
+            document.getElementById('hiddenInput').focus();
+            document.getElementById('focusIndicator').style.opacity = '0';
             document.getElementById('keyboardHint').classList.add('show');
-        }
-
-        function blurTyping() {
-            if (!isCompleted) {
-                document.getElementById('focusOverlay').classList.remove('hidden');
-            }
         }
 
         // Start timer
@@ -687,62 +633,48 @@
         // Calculate WPM
         function updateWPM() {
             if (!startTime) return;
-            const elapsed = (Date.now() - startTime) / 60000;
+            const elapsed = (Date.now() - startTime) / 60000; // minutes
             if (elapsed === 0) return;
-
-            const wordsTyped = currentIndex / 5;
+            
+            const wordsTyped = currentIndex / 5; // standard word length
             const wpm = Math.round(wordsTyped / elapsed);
             document.getElementById('wpm').textContent = Math.max(0, wpm);
         }
 
-        // Update accuracy - FIXED
+        // Update accuracy
         function updateAccuracy() {
             if (currentIndex === 0) return;
             const total = currentIndex;
             const acc = Math.round(((total - errors) / total) * 100);
-
-            const displayEl = document.getElementById('accuracyDisplay');
-            displayEl.textContent = acc;
-
+            document.getElementById('accuracy').textContent = acc;
+            
+            // Update ring
             const ring = document.getElementById('accuracyRing');
-            const circumference = 2 * Math.PI * 42;
+            const circumference = 2 * Math.PI * 45;
             const offset = circumference - (acc / 100) * circumference;
             ring.style.strokeDashoffset = offset;
-
-            if (acc >= 95) {
-                ring.style.stroke = '#34d399';
-                displayEl.className = 'accuracy-value text-emerald-400';
-            } else if (acc >= 80) {
-                ring.style.stroke = '#fbbf24';
-                displayEl.className = 'accuracy-value text-amber-400';
-            } else {
-                ring.style.stroke = '#f87171';
-                displayEl.className = 'accuracy-value text-rose-400';
-            }
+            
+            // Color based on accuracy
+            if (acc >= 95) ring.style.stroke = '#34d399';
+            else if (acc >= 80) ring.style.stroke = '#fbbf24';
+            else ring.style.stroke = '#f87171';
         }
 
-        // Handle keydown - MAIN TYPING LOGIC
-        function handleKeyDown(e) {
-            // Ignore if completed
-            if (isCompleted) return;
-
-            // Handle Tab for restart
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                restartTest();
-                return;
+        // Handle input
+        function handleInput(e) {
+            e.preventDefault();
+            
+            if (!isTyping) {
+                isTyping = true;
+                startTimer();
+                initAudio();
             }
 
-            // Handle Escape for new text
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                resetTest();
-                return;
-            }
-
-            // Handle Backspace
-            if (e.key === 'Backspace') {
-                e.preventDefault();
+            const input = e.target;
+            const value = input.value;
+            
+            // Handle backspace
+            if (e.inputType === 'deleteContentBackward' || e.key === 'Backspace') {
                 if (currentIndex > 0) {
                     currentIndex--;
                     const char = document.querySelector(`[data-index="${currentIndex}"]`);
@@ -755,28 +687,20 @@
                 return;
             }
 
-            // Ignore modifier keys and special keys
-            if (e.ctrlKey || e.altKey || e.metaKey) return;
-            if (e.key.length !== 1) return; // Only single characters
-
-            // Prevent default to stop browser shortcuts
-            e.preventDefault();
-
-            // Start timer on first keystroke
-            if (!isTyping) {
-                isTyping = true;
-                startTimer();
-                initAudio();
+            // Get the typed character
+            let char = '';
+            if (e.data) {
+                char = e.data;
+            } else if (e.key && e.key.length === 1) {
+                char = e.key;
             }
 
-            // Don't allow typing past the end
-            if (currentIndex >= currentText.length) return;
+            if (!char || currentIndex >= currentText.length) return;
 
             const expectedChar = currentText[currentIndex];
-            const typedChar = e.key;
             const charElement = document.querySelector(`[data-index="${currentIndex}"]`);
 
-            if (typedChar === expectedChar) {
+            if (char === expectedChar) {
                 charElement.classList.add('correct');
                 charElement.classList.remove('incorrect');
                 playSound('correct');
@@ -797,24 +721,48 @@
             if (currentIndex >= currentText.length) {
                 completeTest();
             }
+
+            // Clear input to handle next character
+            input.value = '';
+        }
+
+        // Handle special keys
+        function handleKeyDown(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                restartTest();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                resetTest();
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    const char = document.querySelector(`[data-index="${currentIndex}"]`);
+                    if (char) {
+                        char.classList.remove('correct', 'incorrect');
+                    }
+                    updateCursor();
+                    updateAccuracy();
+                }
+            }
         }
 
         // Complete test
         function completeTest() {
-            isCompleted = true;
             clearInterval(timerInterval);
             playSound('complete');
             createConfetti();
-
+            
             const time = Math.floor((Date.now() - startTime) / 1000);
             const wpm = document.getElementById('wpm').textContent;
-            const accuracy = document.getElementById('accuracyDisplay').textContent;
-
+            const accuracy = document.getElementById('accuracy').textContent;
+            
             document.getElementById('finalWpm').textContent = wpm;
             document.getElementById('finalAccuracy').textContent = accuracy + '%';
             document.getElementById('finalTime').textContent = time + 's';
             document.getElementById('finalErrors').textContent = errors;
-
+            
             setTimeout(() => {
                 document.getElementById('resultModal').classList.remove('hidden');
             }, 500);
@@ -843,18 +791,14 @@
             startTime = null;
             errors = 0;
             isTyping = false;
-            isCompleted = false;
-
+            
             document.getElementById('wpm').textContent = '0';
-            document.getElementById('accuracyDisplay').textContent = '100';
+            document.getElementById('accuracy').textContent = '100';
             document.getElementById('timer').textContent = '0';
             document.getElementById('errors').textContent = '0';
-
-            const ring = document.getElementById('accuracyRing');
-            ring.style.strokeDashoffset = '0';
-            ring.style.stroke = '#34d399';
-            document.getElementById('accuracyDisplay').className = 'accuracy-value text-emerald-400';
-
+            document.getElementById('accuracyRing').style.strokeDashoffset = '0';
+            document.getElementById('hiddenInput').value = '';
+            
             initDisplay();
             focusTyping();
         }
@@ -866,18 +810,14 @@
             startTime = null;
             errors = 0;
             isTyping = false;
-            isCompleted = false;
-
+            
             document.getElementById('wpm').textContent = '0';
-            document.getElementById('accuracyDisplay').textContent = '100';
+            document.getElementById('accuracy').textContent = '100';
             document.getElementById('timer').textContent = '0';
             document.getElementById('errors').textContent = '0';
-
-            const ring = document.getElementById('accuracyRing');
-            ring.style.strokeDashoffset = '0';
-            ring.style.stroke = '#34d399';
-            document.getElementById('accuracyDisplay').className = 'accuracy-value text-emerald-400';
-
+            document.getElementById('accuracyRing').style.strokeDashoffset = '0';
+            document.getElementById('hiddenInput').value = '';
+            
             initDisplay();
             focusTyping();
         }
@@ -898,15 +838,7 @@
 
         // Show help
         function showHelp() {
-            alert('MaheeType Help:
-
-• Click the text area to focus
-• Type the displayed text
-• Green = correct, Red = incorrect
-• Tab: Restart same text
-• Esc: New random text
-• Backspace: Correct mistakes
-• Sound can be toggled in header');
+            alert('TypeFlow Help:\n\n• Click the text area to focus\n• Type the displayed text\n• Green = correct, Red = incorrect\n• Tab: Restart same text\n• Esc: New random text\n• Sound can be toggled in header');
         }
 
         // Initialize
@@ -914,39 +846,25 @@
             createParticles();
             currentText = getRandomText();
             initDisplay();
-
-            const typingBox = document.getElementById('typingBox');
-
-            // Main event listener for typing
-            typingBox.addEventListener('keydown', handleKeyDown);
-
-            // Focus/blur handling
-            typingBox.addEventListener('focus', () => {
-                document.getElementById('focusOverlay').classList.add('hidden');
-                document.getElementById('keyboardHint').classList.add('show');
+            
+            const hiddenInput = document.getElementById('hiddenInput');
+            hiddenInput.addEventListener('input', handleInput);
+            hiddenInput.addEventListener('keydown', handleKeyDown);
+            
+            // Focus on load
+            setTimeout(focusTyping, 500);
+            
+            // Keep focus
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.glass') && !e.target.closest('button')) {
+                    focusTyping();
+                }
             });
-
-            typingBox.addEventListener('blur', blurTyping);
-
-            // Auto-focus on load
-            setTimeout(focusTyping, 300);
         });
 
-        // Keep focus when clicking elsewhere
-        document.addEventListener('click', (e) => {
-            const typingBox = document.getElementById('typingBox');
-            const modal = document.getElementById('resultModal');
-
-            // Don't steal focus if modal is open
-            if (!modal.classList.contains('hidden')) return;
-
-            // Don't steal focus if clicking buttons
-            if (e.target.closest('button')) return;
-
-            // Focus typing box if clicking on it or its overlay
-            if (e.target.closest('#typingBox') || e.target.closest('#focusOverlay')) {
-                focusTyping();
-            }
+        // Prevent losing focus
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) setTimeout(focusTyping, 100);
         });
     </script>
 </body>
