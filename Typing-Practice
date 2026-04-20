@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeFlow - Typing Practice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
+        }
+
+        /* Glassmorphism cards */
+        .glass {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Typing area styles */
+        .typing-container {
+            position: relative;
+            min-height: 200px;
+        }
+
+        .char {
+            display: inline-block;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border-radius: 2px;
+            padding: 0 1px;
+        }
+
+        .char.correct {
+            color: #34d399;
+            text-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+            transform: scale(1.05);
+        }
+
+        .char.incorrect {
+            color: #f87171;
+            text-shadow: 0 0 10px rgba(248, 113, 113, 0.4);
+            background: rgba(248, 113, 113, 0.15);
+            animation: shake 0.3s ease-in-out;
+        }
+
+        .char.current {
+            background: rgba(99, 102, 241, 0.3);
+            border-bottom: 3px solid #6366f1;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Cursor blink */
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background: #6366f1;
+            animation: blink 1s infinite;
+            vertical-align: text-bottom;
+            margin-left: 1px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Stats cards animation */
+        .stat-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Progress bar */
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        /* Button animations */
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Keyboard hint */
+        .keyboard-hint {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .keyboard-hint.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Result modal */
+        .modal-overlay {
+            backdrop-filter: blur(8px);
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalIn {
+            0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        /* Difficulty selector */
+        .difficulty-btn {
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .difficulty-btn.active {
+            border-color: currentColor;
+            background: rgba(255,255,255,0.1);
+            transform: scale(1.05);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .typing-text {
+                font-size: 1.1rem !important;
+                line-height: 2 !important;
+            }
+        }
+
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+
+        /* Confetti animation */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Background Particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 min-h-screen flex flex-col">
+        
+        <!-- Header -->
+        <header class="w-full p-4 md:p-6">
+            <div class="max-w-6xl mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                        TypeFlow
+                    </h1>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleSound()" id="soundBtn" class="p-2 rounded-lg glass hover:bg-white/10 transition-colors">
+                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                        </svg>
+                    </button>
+                    <button onclick="showHelp()" class="p-2 rounded-lg glass hover:bg-white/10 transition-colors md:hidden">
+                        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col items-center justify-center px-4 py-6 md:py-12 w-full max-w-6xl mx-auto">
+            
+            <!-- Stats Bar -->
+            <div class="w-full grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-10">
+                <!-- WPM -->
+                <div class="stat-card glass rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative z-10 text-center">
+                        <div class="text-xs md:text-sm text-slate-400 uppercase tracking-wider font-semibold mb-1">Speed</div>
+                        <div class="text-3xl md:text-4xl font-bold text-white mono-font">
+                            <span id="wpm">0</span>
+                            <span class="text-sm md:text-base text-slate-500 font-normal">WPM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accuracy -->
+                <div class="stat-card glass rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative z-10 text-center">
+                        <div class="text-xs md:text-sm text-slate-400 uppercase tracking-wider font-semibold mb-1">Accuracy</div>
+                        <div class="text-3xl md:text-4xl font-bold text-white mono-font">
+                            <span id="accuracy">100</span>
+                            <span class="text-sm md:text-base text-slate-500 font-normal">%</span>
+                        </div>
+                    </div>
+                    <!-- Circular progress -->
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2"/>
+                        <circle id="accuracyRing" class="progress-ring-circle" cx="50" cy="50" r="45" fill="none" stroke="#34d399" stroke-width="2" 
+                            stroke-dasharray="283" stroke-dashoffset="0" stroke-linecap="round"/>
+                    </svg>
+                </div>
+
+                <!-- Time -->
+                <div class="stat-card glass rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative z-10 text-center">
+                        <div class="text-xs md:text-sm text-slate-400 uppercase tracking-wider font-semibold mb-1">Time</div>
+                        <div class="text-3xl md:text-4xl font-bold text-white mono-font">
+                            <span id="timer">0</span>
+                            <span class="text-sm md:text-base text-slate-500 font-normal">s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Errors -->
+                <div class="stat-card glass rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-rose-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative z-10 text-center">
+                        <div class="text-xs md:text-sm text-slate-400 uppercase tracking-wider font-semibold mb-1">Errors</div>
+                        <div class="text-3xl md:text-4xl font-bold text-white mono-font">
+                            <span id="errors">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Difficulty Selector -->
+            <div class="flex gap-2 mb-6 md:mb-8">
+                <button onclick="setDifficulty('easy')" class="difficulty-btn px-4 py-2 rounded-lg text-sm font-medium text-emerald-400 hover:bg-white/5" data-diff="easy">
+                    Easy
+                </button>
+                <button onclick="setDifficulty('medium')" class="difficulty-btn active px-4 py-2 rounded-lg text-sm font-medium text-amber-400 hover:bg-white/5" data-diff="medium">
+                    Medium
+                </button>
+                <button onclick="setDifficulty('hard')" class="difficulty-btn px-4 py-2 rounded-lg text-sm font-medium text-rose-400 hover:bg-white/5" data-diff="hard">
+                    Hard
+                </button>
+            </div>
+
+            <!-- Typing Area -->
+            <div class="w-full max-w-4xl relative">
+                <!-- Focus indicator -->
+                <div id="focusIndicator" class="absolute -top-12 left-1/2 transform -translate-x-1/2 text-sm text-indigo-400 opacity-0 transition-opacity duration-300 flex items-center gap-2">
+                    <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                    </svg>
+                    Click here or press any key to start
+                </div>
+
+                <div class="glass rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden" onclick="focusTyping()">
+                    <!-- Decorative corner accents -->
+                    <div class="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-indigo-500/30 rounded-tl-2xl"></div>
+                    <div class="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-indigo-500/30 rounded-tr-2xl"></div>
+                    <div class="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-indigo-500/30 rounded-bl-2xl"></div>
+                    <div class="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-indigo-500/30 rounded-br-2xl"></div>
+
+                    <!-- Text Display -->
+                    <div id="textDisplay" class="typing-text mono-font text-lg md:text-2xl leading-relaxed md:leading-loose text-slate-500 break-words select-none min-h-[120px] md:min-h-[160px]">
+                        <!-- Text will be injected here -->
+                    </div>
+
+                    <!-- Hidden Input -->
+                    <textarea id="hiddenInput" class="absolute opacity-0 top-0 left-0 h-full w-full cursor-default" spellcheck="false" autocomplete="off"></textarea>
+                </div>
+
+                <!-- Keyboard Hint -->
+                <div id="keyboardHint" class="keyboard-hint mt-4 text-center text-slate-400 text-sm flex items-center justify-center gap-2">
+                    <span class="px-2 py-1 rounded bg-white/10 text-xs mono-font">Esc</span> to reset
+                    <span class="px-2 py-1 rounded bg-white/10 text-xs mono-font ml-2">Tab</span> to restart
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex gap-4 mt-8 md:mt-12">
+                <button onclick="resetTest()" class="btn-primary px-6 py-3 md:px-8 md:py-4 rounded-xl font-semibold text-white shadow-lg flex items-center gap-2 text-sm md:text-base">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    New Text
+                </button>
+                <button onclick="restartTest()" class="glass px-6 py-3 md:px-8 md:py-4 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2 text-sm md:text-base">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Restart
+                </button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="w-full p-4 text-center text-slate-500 text-sm">
+            <p>TypeFlow - Practice makes perfect</p>
+        </footer>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="resultModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="modal-content glass rounded-3xl p-6 md:p-10 max-w-md w-full shadow-2xl border border-white/10">
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Completed!</h2>
+                    <p class="text-slate-400">Great job! Here are your results</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-white/5 rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-indigo-400 mono-font" id="finalWpm">0</div>
+                        <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">WPM</div>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-emerald-400 mono-font" id="finalAccuracy">0%</div>
+                        <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">Accuracy</div>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-amber-400 mono-font" id="finalTime">0s</div>
+                        <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">Time</div>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-rose-400 mono-font" id="finalErrors">0</div>
+                        <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">Errors</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="closeModal(); resetTest()" class="flex-1 btn-primary py-3 rounded-xl font-semibold text-white">
+                        New Test
+                    </button>
+                    <button onclick="closeModal(); restartTest()" class="flex-1 glass py-3 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all">
+                        Retry
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Text database
+        const texts = {
+            easy: [
+                "The quick brown fox jumps over the lazy dog. Simple words make typing fun and easy to learn.",
+                "A journey of a thousand miles begins with a single step. Keep practicing every day.",
+                "The sun rises in the east and sets in the west. Nature follows its own rhythm.",
+                "Cats sleep for many hours each day. They are peaceful and calm animals.",
+                "Reading books opens new worlds. Stories take us to places we have never been.",
+                "Water flows down the river to the sea. It finds its way through any obstacle.",
+                "Birds sing in the morning to welcome the day. Their songs fill the air with joy.",
+                "Friends help each other in times of need. True friendship lasts forever.",
+                "The garden is full of colorful flowers. Bees buzz from bloom to bloom.",
+                "Stars shine bright in the night sky. They guide travelers on their way."
+            ],
+            medium: [
+                "Technology transforms the way we communicate, bridging gaps between distant cultures and fostering global understanding through instant connectivity.",
+                "The art of programming requires patience and creativity. Every line of code tells a story of problem-solving and innovation.",
+                "Mountains stand tall against the horizon, their peaks covered in snow. Climbers face challenges but reach summits with determination.",
+                "Music resonates deeply within the human soul, evoking emotions that words alone cannot express across generations.",
+                "Ocean waves crash against the shore in an endless rhythm. The tide brings treasures from the deep blue sea.",
+                "Architects design buildings that shape our cities. Their vision combines beauty with function to create lasting structures.",
+                "The human brain processes millions of signals every second. Consciousness emerges from complex neural networks working in harmony.",
+                "Space exploration pushes the boundaries of human knowledge. Astronauts float in zero gravity while studying the cosmos.",
+                "Historical events shape the present and future. Learning from the past helps us make better decisions today.",
+                "Photography captures fleeting moments in time. A single image can tell an entire story without words."
+            ],
+            hard: [
+                "The quintessential juxtaposition of quantum mechanics and general relativity presents an extraordinarily challenging conceptual framework for theoretical physicists worldwide.",
+                "Pneumonoultramicroscopicsilicovolcanoconiosis remains the longest word in English dictionaries, describing a lung disease caused by inhaling very fine silicate particles.",
+                "Cryptocurrency blockchain technology fundamentally revolutionizes decentralized finance through immutable distributed ledger systems and smart contract automation.",
+                "The antidisestablishmentarianism movement historically opposed removing Church of England status as the official state church during nineteenth century political debates.",
+                "Bioluminescent organisms dwelling in abyssopelagic zones emit ethereal light through biochemical reactions involving luciferin and luciferase enzyme compounds.",
+                "Photosynthesis chloroplasts convert electromagnetic radiation into chemical energy through complex electron transport chains and carbon fixation cycles.",
+                "Neuroplasticity enables synaptic reconfiguration throughout cerebral cortex regions, facilitating adaptive learning and memory consolidation mechanisms.",
+                "International jurisprudence encompasses multifaceted diplomatic negotiations, treaty ratifications, and humanitarian interventions across sovereign territorial boundaries.",
+                "Thermodynamic entropy quantifies energy dispersal within isolated systems, fundamentally governing arrow of time directionalities in physics.",
+                "Epistemological phenomenology examines subjective consciousness experiences, bracketing natural world assumptions to study pure intentional phenomena."
+            ]
+        };
+
+        // State
+        let currentText = '';
+        let currentIndex = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let errors = 0;
+        let isTyping = false;
+        let difficulty = 'medium';
+        let soundEnabled = true;
+        let typedHistory = [];
+
+        // Audio context for sound effects
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !audioCtx) return;
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.05;
+                oscillator.type = 'sine';
+            } else if (type === 'incorrect') {
+                oscillator.frequency.value = 200;
+                gainNode.gain.value = 0.08;
+                oscillator.type = 'square';
+            } else if (type === 'complete') {
+                oscillator.frequency.value = 1200;
+                gainNode.gain.value = 0.05;
+                oscillator.type = 'sine';
+            }
+            
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // Initialize particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Set difficulty
+        function setDifficulty(diff) {
+            difficulty = diff;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.diff === diff) btn.classList.add('active');
+            });
+            resetTest();
+        }
+
+        // Get random text
+        function getRandomText() {
+            const pool = texts[difficulty];
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        // Initialize display
+        function initDisplay() {
+            const display = document.getElementById('textDisplay');
+            display.innerHTML = '';
+            
+            currentText.split('').forEach((char, index) => {
+                const span = document.createElement('span');
+                span.className = 'char';
+                span.textContent = char;
+                span.dataset.index = index;
+                display.appendChild(span);
+            });
+            
+            // Add cursor after first char initially
+            updateCursor();
+        }
+
+        function updateCursor() {
+            document.querySelectorAll('.char').forEach(char => char.classList.remove('current'));
+            const currentChar = document.querySelector(`[data-index="${currentIndex}"]`);
+            if (currentChar) {
+                currentChar.classList.add('current');
+                
+                // Scroll into view if needed
+                currentChar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Focus typing area
+        function focusTyping() {
+            document.getElementById('hiddenInput').focus();
+            document.getElementById('focusIndicator').style.opacity = '0';
+            document.getElementById('keyboardHint').classList.add('show');
+        }
+
+        // Start timer
+        function startTimer() {
+            if (!startTime) {
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 100);
+            }
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').textContent = elapsed;
+            updateWPM();
+        }
+
+        // Calculate WPM
+        function updateWPM() {
+            if (!startTime) return;
+            const elapsed = (Date.now() - startTime) / 60000; // minutes
+            if (elapsed === 0) return;
+            
+            const wordsTyped = currentIndex / 5; // standard word length
+            const wpm = Math.round(wordsTyped / elapsed);
+            document.getElementById('wpm').textContent = Math.max(0, wpm);
+        }
+
+        // Update accuracy
+        function updateAccuracy() {
+            if (currentIndex === 0) return;
+            const total = currentIndex;
+            const acc = Math.round(((total - errors) / total) * 100);
+            document.getElementById('accuracy').textContent = acc;
+            
+            // Update ring
+            const ring = document.getElementById('accuracyRing');
+            const circumference = 2 * Math.PI * 45;
+            const offset = circumference - (acc / 100) * circumference;
+            ring.style.strokeDashoffset = offset;
+            
+            // Color based on accuracy
+            if (acc >= 95) ring.style.stroke = '#34d399';
+            else if (acc >= 80) ring.style.stroke = '#fbbf24';
+            else ring.style.stroke = '#f87171';
+        }
+
+        // Handle input
+        function handleInput(e) {
+            e.preventDefault();
+            
+            if (!isTyping) {
+                isTyping = true;
+                startTimer();
+                initAudio();
+            }
+
+            const input = e.target;
+            const value = input.value;
+            
+            // Handle backspace
+            if (e.inputType === 'deleteContentBackward' || e.key === 'Backspace') {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    const char = document.querySelector(`[data-index="${currentIndex}"]`);
+                    if (char) {
+                        char.classList.remove('correct', 'incorrect');
+                    }
+                    updateCursor();
+                    updateAccuracy();
+                }
+                return;
+            }
+
+            // Get the typed character
+            let char = '';
+            if (e.data) {
+                char = e.data;
+            } else if (e.key && e.key.length === 1) {
+                char = e.key;
+            }
+
+            if (!char || currentIndex >= currentText.length) return;
+
+            const expectedChar = currentText[currentIndex];
+            const charElement = document.querySelector(`[data-index="${currentIndex}"]`);
+
+            if (char === expectedChar) {
+                charElement.classList.add('correct');
+                charElement.classList.remove('incorrect');
+                playSound('correct');
+            } else {
+                charElement.classList.add('incorrect');
+                charElement.classList.remove('correct');
+                errors++;
+                document.getElementById('errors').textContent = errors;
+                playSound('incorrect');
+            }
+
+            currentIndex++;
+            updateCursor();
+            updateAccuracy();
+            updateWPM();
+
+            // Check completion
+            if (currentIndex >= currentText.length) {
+                completeTest();
+            }
+
+            // Clear input to handle next character
+            input.value = '';
+        }
+
+        // Handle special keys
+        function handleKeyDown(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                restartTest();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                resetTest();
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    const char = document.querySelector(`[data-index="${currentIndex}"]`);
+                    if (char) {
+                        char.classList.remove('correct', 'incorrect');
+                    }
+                    updateCursor();
+                    updateAccuracy();
+                }
+            }
+        }
+
+        // Complete test
+        function completeTest() {
+            clearInterval(timerInterval);
+            playSound('complete');
+            createConfetti();
+            
+            const time = Math.floor((Date.now() - startTime) / 1000);
+            const wpm = document.getElementById('wpm').textContent;
+            const accuracy = document.getElementById('accuracy').textContent;
+            
+            document.getElementById('finalWpm').textContent = wpm;
+            document.getElementById('finalAccuracy').textContent = accuracy + '%';
+            document.getElementById('finalTime').textContent = time + 's';
+            document.getElementById('finalErrors').textContent = errors;
+            
+            setTimeout(() => {
+                document.getElementById('resultModal').classList.remove('hidden');
+            }, 500);
+        }
+
+        // Confetti effect
+        function createConfetti() {
+            const colors = ['#6366f1', '#34d399', '#fbbf24', '#f87171', '#8b5cf6'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        // Reset test (new text)
+        function resetTest() {
+            clearInterval(timerInterval);
+            currentText = getRandomText();
+            currentIndex = 0;
+            startTime = null;
+            errors = 0;
+            isTyping = false;
+            
+            document.getElementById('wpm').textContent = '0';
+            document.getElementById('accuracy').textContent = '100';
+            document.getElementById('timer').textContent = '0';
+            document.getElementById('errors').textContent = '0';
+            document.getElementById('accuracyRing').style.strokeDashoffset = '0';
+            document.getElementById('hiddenInput').value = '';
+            
+            initDisplay();
+            focusTyping();
+        }
+
+        // Restart (same text)
+        function restartTest() {
+            clearInterval(timerInterval);
+            currentIndex = 0;
+            startTime = null;
+            errors = 0;
+            isTyping = false;
+            
+            document.getElementById('wpm').textContent = '0';
+            document.getElementById('accuracy').textContent = '100';
+            document.getElementById('timer').textContent = '0';
+            document.getElementById('errors').textContent = '0';
+            document.getElementById('accuracyRing').style.strokeDashoffset = '0';
+            document.getElementById('hiddenInput').value = '';
+            
+            initDisplay();
+            focusTyping();
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('resultModal').classList.add('hidden');
+        }
+
+        // Toggle sound
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundBtn');
+            btn.innerHTML = soundEnabled ? 
+                `<svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>` :
+                `<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>`;
+        }
+
+        // Show help
+        function showHelp() {
+            alert('TypeFlow Help:\n\n• Click the text area to focus\n• Type the displayed text\n• Green = correct, Red = incorrect\n• Tab: Restart same text\n• Esc: New random text\n• Sound can be toggled in header');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            currentText = getRandomText();
+            initDisplay();
+            
+            const hiddenInput = document.getElementById('hiddenInput');
+            hiddenInput.addEventListener('input', handleInput);
+            hiddenInput.addEventListener('keydown', handleKeyDown);
+            
+            // Focus on load
+            setTimeout(focusTyping, 500);
+            
+            // Keep focus
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.glass') && !e.target.closest('button')) {
+                    focusTyping();
+                }
+            });
+        });
+
+        // Prevent losing focus
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) setTimeout(focusTyping, 100);
+        });
+    </script>
+</body>
+</html>
